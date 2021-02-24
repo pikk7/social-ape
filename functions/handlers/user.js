@@ -3,6 +3,7 @@ const functions = require("firebase-functions");
 const {
   validateSignUpData,
   validateLoginData,
+  reduceUserDetails,
 } = require("../utils/validators");
 const { admin, db } = require("../utils/admin");
 const firebaseConfig = require("../utils/config");
@@ -186,4 +187,44 @@ exports.uploadImage = (req, res) => {
 };
 
 //Add user details
-exports.addUserDetails = (req, res) => {};
+exports.addUserDetails = (req, res) => {
+  let userDetails = reduceUserDetails(req.body);
+
+  db.doc(`/users/${req.user.username}`)
+    .update(userDetails)
+    .then(() => {
+      return res.json({ message: "Details added succescfully" });
+    })
+    .catch((e) => {
+      console.error(e);
+
+      return res.status(500).json({ error: e });
+    });
+};
+
+exports.getAuthenticatedUser = (req, res) => {
+  let userData = {};
+
+  db.doc(`/users/${req.user.username}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        userData.credentials = doc.data();
+        return db
+          .collection("likes")
+          .where("username", "==", req.user.username)
+          .get();
+      }
+    })
+    .then((data) => {
+      userData.likes = [];
+      data.forEach((doc) => {
+        userData.likes.push(doc.data());
+      });
+      return res.json(userData);
+    })
+    .catch((e) => {
+      console.error(e);
+      return res.status(500).json({ error: e });
+    });
+};

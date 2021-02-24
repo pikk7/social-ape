@@ -1,6 +1,6 @@
 const { db } = require("../utils/admin");
 const functions = require("firebase-functions");
-
+const { isEmpty } = require("../utils/validators");
 exports.getAllEvents = (req, res) => {
   functions.logger.info("get events", { structuredData: true });
 

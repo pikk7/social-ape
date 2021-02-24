@@ -7,6 +7,7 @@ const {
   getAllUsers,
   uploadImage,
   addUserDetails,
+  getAuthenticatedUser,
 } = require("./handlers/user");
 const { firebaseAuth } = require("./utils/middlewares");
 
@@ -23,5 +24,6 @@ app.post("/signup", signUp);
 app.post("/login", login);
 app.post("/user/image", firebaseAuth, uploadImage);
 app.post("/user", firebaseAuth, addUserDetails);
+app.get("/user", firebaseAuth, getAuthenticatedUser);
 
 exports.api = functions.region("europe-west3").https.onRequest(app);
