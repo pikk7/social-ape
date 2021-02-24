@@ -18,7 +18,6 @@ exports.firebaseAuth = (req, res, next) => {
     .verifyIdToken(idToken)
     .then((decodecToken) => {
       req.user = decodecToken;
-      console.log(decodecToken);
       return db
         .collection("users")
         .where("userId", "==", req.user.uid)

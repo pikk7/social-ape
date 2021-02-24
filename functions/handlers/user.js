@@ -140,10 +140,14 @@ exports.uploadImage = (req, res) => {
 
   let imageFileName;
   let imageToBeUploaded = {};
-  busboy.on("file", (fieldname, filename, file, encoding, mimetype) => {
-    console.log(fieldname);
-    console.log(filename);
-    console.log(mimetype);
+  busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+    if (
+      mimetype !== "image/jpeg" &&
+      mimetype !== "image/png" &&
+      mimetype !== "image/svg"
+    ) {
+      return res.status(400).json({ error: "Wrong file type submited" });
+    }
 
     //image.png
     const imageExtension = filename.split(".")[filename.split(".").length - 1];
@@ -177,4 +181,9 @@ exports.uploadImage = (req, res) => {
         return res.status(500).json(err);
       });
   });
+
+  busboy.end(req.rawBody);
 };
+
+//Add user details
+exports.addUserDetails = (req, res) => {};
