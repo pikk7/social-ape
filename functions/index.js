@@ -1,6 +1,11 @@
 const functions = require("firebase-functions");
 
-const { getAllEvents, postOneEvent } = require("./handlers/event");
+const {
+  getAllEvents,
+  postOneEvent,
+  getEvent,
+  commentOnEvent,
+} = require("./handlers/event");
 const {
   signUp,
   login,
@@ -15,9 +20,13 @@ const app = require("express")();
 
 //event routs
 app.get("/events", getAllEvents);
-
 app.post("/event", firebaseAuth, postOneEvent);
-
+app.get("/event/:eventId", getEvent);
+// TODO:delete
+// TODO:like
+// TODO:unlike
+// TODO:comment
+app.post("/event/:eventId/comment", firebaseAuth, commentOnEvent);
 //user routs
 app.get("/users", getAllUsers);
 app.post("/signup", signUp);

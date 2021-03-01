@@ -66,3 +66,63 @@ exports.postOneEvent = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.getEvent = (req, res) => {
+  let eventData = {};
+  db.doc(`/events/${req.params.eventId}`)
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Event is not found" });
+      }
+      eventData = doc.data();
+      eventData.eventId = doc.id;
+      return db
+        .collection("comments")
+        .orderBy("createdAt", "desc")
+        .where("eventId", "==", req.params.eventId)
+        .get();
+    })
+    .then((data) => {
+      eventData.comments = [];
+      data.forEach((doc) => {
+        eventData.comments.push(doc.data());
+      });
+      return res.json(eventData);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+
+//Comment on an event
+exports.commentOnEvent = (req, res) => {
+  if (req.body.body.trim() === "") {
+    return res.status(400).json({ error: "Must not be empty" });
+  }
+
+  const newComment = {
+    body: req.body.body,
+    createdAt: new Date().toISOString(),
+    eventId: req.params.eventId,
+    username: req.user.username,
+    userImage: req.user.imageUrl,
+  };
+
+  db.doc(`/events/${req.params.eventId}`)
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(400).json({ error: "Event not found" });
+      }
+      return db.collection("comments").add(newComment);
+    })
+    .then(() => {
+      res.json(newComment);
+    })
+    .catch((e) => {
+      console.error(e);
+      return res.status(500).json({ error: "Something went wrong" });
+    });
+};
