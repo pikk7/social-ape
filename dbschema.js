@@ -17,3 +17,17 @@ const userDetails = {
     { eventId: "78910" },
   ],
 };
+
+//db schema
+const dbshcema = {
+  notifications: [
+    {
+      recipient: "user",
+      sender: "jhon",
+      read: "true|false",
+      eventId: "kaacMMb4cVHjv6QeZosJ",
+      type: "like|comment",
+      createdAt: "2021-03-07T14:11:52.7876",
+    },
+  ],
+};

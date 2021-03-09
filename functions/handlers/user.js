@@ -74,7 +74,7 @@ exports.signUp = (req, res) => {
           email: "It has to be at least 6 chacachter ",
         });
       } else {
-        return res.status(500).json({ error: err.code });
+        return res.status(500).json({ general: "Something went wrong" });
       }
     });
 };
@@ -103,18 +103,9 @@ exports.login = (req, res) => {
     })
     .catch((err) => {
       console.error(err);
-
-      if (err.code === "auth/wrong-password") {
-        return res
-          .status(403)
-          .json({ general: "Wrong password, please try again" });
-      } else if (err.code === "auth/invalid-email") {
-        return res
-          .status(403)
-          .json({ general: "Wrong email, please try again" });
-      } else {
-        return res.status(500).json({ error: err.code });
-      }
+      return res
+        .status(403)
+        .json({ general: "Wrong credentials, please try again" });
     });
 };
 
@@ -201,6 +192,56 @@ exports.addUserDetails = (req, res) => {
       return res.status(500).json({ error: e });
     });
 };
+//any user's data
+exports.getUserDetails = (req, res) => {
+  let userData = {};
+
+  db.doc(`/users/${req.params.username}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        userData.user = doc.data();
+        return db
+          .collection("events")
+          .where("username", "==", req.params.username)
+          .orderBy("createdAt", "desc")
+          .get();
+      } else {
+        return res.status(404).json({ error: "User not found" });
+      }
+    })
+    .then((data) => {
+      userData.events = [];
+      data.forEach((doc) => {
+        userData.events.push({
+          ...doc.data(),
+          eventId: doc.id,
+        });
+      });
+      return res.json(userData);
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.json(err);
+    });
+};
+//batchwrite
+exports.markNotificationsRead = (req, res) => {
+  let batch = db.batch();
+  req.body.forEach((notificationId) => {
+    const notification = db.doc(`/notifications/${notificationId}`);
+    batch.update(notification, { read: true });
+  });
+  batch
+    .commit()
+    .then(() => {
+      return res.json({ message: "Notifications marked read" });
+    })
+    .catch((e) => {
+      console.error(e);
+      return res.status(500).json(e);
+    });
+};
 
 exports.getAuthenticatedUser = (req, res) => {
   let userData = {};
@@ -220,6 +261,21 @@ exports.getAuthenticatedUser = (req, res) => {
       userData.likes = [];
       data.forEach((doc) => {
         userData.likes.push(doc.data());
+      });
+      return db
+        .collection("notifications")
+        .where("recipient", "==", req.user.username)
+        .orderBy("createdAt", "desc")
+        .limit(10)
+        .get();
+    })
+    .then((data) => {
+      userData.notifications = [];
+      data.forEach((doc) => {
+        userData.notifications.push({
+          ...doc.data(),
+          notificationId: doc.id,
+        });
       });
       return res.json(userData);
     })

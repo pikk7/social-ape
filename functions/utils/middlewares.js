@@ -2,7 +2,7 @@ const { admin, db } = require("./admin");
 
 exports.firebaseAuth = (req, res, next) => {
   let idToken;
-  console.log(req.headers.authorization);
+  // console.log(req.headers.authorization);
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer ")
