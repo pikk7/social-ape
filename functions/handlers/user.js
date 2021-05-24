@@ -202,7 +202,7 @@ exports.getUserDetails = (req, res) => {
       if (doc.exists) {
         userData.user = doc.data();
         return db
-          .collection("events")
+          .collection("screams")
           .where("username", "==", req.params.username)
           .orderBy("createdAt", "desc")
           .get();
@@ -211,11 +211,11 @@ exports.getUserDetails = (req, res) => {
       }
     })
     .then((data) => {
-      userData.events = [];
+      userData.screams = [];
       data.forEach((doc) => {
-        userData.events.push({
+        userData.screams.push({
           ...doc.data(),
-          eventId: doc.id,
+          screamId: doc.id,
         });
       });
       return res.json(userData);

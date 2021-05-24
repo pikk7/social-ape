@@ -1,51 +1,63 @@
-import React, { useState } from "react";
 import "./App.css";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { ThemeProvider as MuiThemeProvider } from "@material-ui/core/styles";
+import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
+//REDUX
+import { Provider } from "react-redux";
+import store from "./redux/store";
+import { SET_AUTHENTICATED } from "./redux/types";
+import { logoutUser, getUserData } from "./redux/actions/userActions";
+//components
+import Navbar from "./components/layout/Navbar";
+import AuthRoute from "./util/AuthRoute";
+//Pages
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import User from "./pages/User";
+import themeFile from "./util/theme";
+import jwtDecode from "jwt-decode";
+import axios from "axios";
 
-import CssBaseline from "@material-ui/core/CssBaseline";
-import AppBar from "./components/Appbar";
-import { AuthContext } from "./context/auth";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { createMuiTheme, MuiThemeProvider } from "@material-ui/core";
+const theme = createMuiTheme(themeFile);
 
+axios.defaults.baseURL =
+  "https://europe-west3-redcross-gamification.cloudfunctions.net/api";
+
+const token = localStorage.FbIdToken;
+if (token) {
+  const decodedToken = jwtDecode(token);
+  if (decodedToken.exp * 1000 < Date.now()) {
+    store.dispatch(logoutUser());
+    window.location.href = "/login";
+  } else {
+    store.dispatch({ type: SET_AUTHENTICATED });
+    axios.defaults.headers.common["Authorization"] = token;
+    store.dispatch(getUserData());
+  }
+}
 function App() {
-  const [authTokens, setAuthTokens] = useState(
-    localStorage.getItem("tokens") || ""
-  );
-  const theme = createMuiTheme({
-    palette: {
-      primary: {
-        main: "#ed1b2e",
-        dark: "#a51220",
-        contrastText: "#000",
-      },
-      secondary: {
-        light: "#757ce8",
-        main: "#3f50b5",
-        dark: "#002884",
-        contrastText: "#fff",
-      },
-    },
-  });
-
-  const setTokens = (data) => {
-    if (data) {
-      // user login
-      localStorage.setItem("tokens", JSON.stringify(data));
-    } else {
-      // user logout
-      localStorage.removeItem("tokens");
-    }
-    setAuthTokens(data);
-  };
   return (
-    <AuthContext.Provider value={{ authTokens, setAuthTokens: setTokens }}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        <ErrorBoundary>
-          <AppBar />
-        </ErrorBoundary>
-      </MuiThemeProvider>
-    </AuthContext.Provider>
+    <MuiThemeProvider theme={theme}>
+      <Provider store={store}>
+        <Router>
+          <Navbar />
+          <div className="container">
+            <Switch>
+              <Route exact path="/" component={Home}></Route>
+              <AuthRoute exact path="/login" component={Login} />
+              <AuthRoute exact path="/signup" component={Signup} />
+              <Route exact path="/users/:username" component={User} />
+              <Route
+                exact
+                path="/users/:username/scream/:screamId"
+                component={User}
+              />
+            </Switch>
+          </div>
+        </Router>
+      </Provider>
+    </MuiThemeProvider>
   );
 }
 

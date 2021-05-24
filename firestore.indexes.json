@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "eventId",
+          "fieldPath": "screamId",
           "order": "ASCENDING"
         },
         {
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "collectionGroup": "events",
+      "collectionGroup": "screams",
       "queryScope": "COLLECTION",
       "fields": [
         {

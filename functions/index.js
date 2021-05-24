@@ -1,14 +1,14 @@
 const functions = require("firebase-functions");
 const { db } = require("./utils/admin");
 const {
-  getAllEvents,
-  postOneEvent,
-  getEvent,
-  commentOnEvent,
-  unlikeEvent,
-  likeEvent,
-  deleteEvent,
-} = require("./handlers/event");
+  getAllScreams,
+  postOneScream,
+  getScream,
+  commentOnScream,
+  unlikeScream,
+  likeScream,
+  deleteScream,
+} = require("./handlers/scream");
 const {
   signUp,
   login,
@@ -21,18 +21,20 @@ const {
 } = require("./handlers/user");
 const { firebaseAuth } = require("./utils/middlewares");
 
+const cors = require("cors");
+
 const app = require("express")();
-
-//events routes
-app.get("/events", getAllEvents);
-app.post("/event", firebaseAuth, postOneEvent);
-app.get("/event/:eventId", getEvent);
+app.use(cors());
+//screams routes
+app.get("/screams", getAllScreams);
+app.post("/scream", firebaseAuth, postOneScream);
+app.get("/scream/:screamId", getScream);
 // TODO:delete
-app.delete("/event/:eventId", firebaseAuth, deleteEvent);
-app.get("/event/:eventId/unlike", firebaseAuth, unlikeEvent);
+app.delete("/scream/:screamId", firebaseAuth, deleteScream);
+app.get("/scream/:screamId/unlike", firebaseAuth, unlikeScream);
 
-app.get("/event/:eventId/like", firebaseAuth, likeEvent);
-app.post("/event/:eventId/comment", firebaseAuth, commentOnEvent);
+app.get("/scream/:screamId/like", firebaseAuth, likeScream);
+app.post("/scream/:screamId/comment", firebaseAuth, commentOnScream);
 
 //users routes
 app.get("/users", getAllUsers);
@@ -49,7 +51,7 @@ exports.createNotificationOnLike = functions
   .firestore.document("likes/{id}")
   .onCreate((snapshot) => {
     return db
-      .doc(`/events/${snapshot.data().eventId}`)
+      .doc(`/screams/${snapshot.data().screamId}`)
       .get()
       .then((doc) => {
         if (doc.exists && doc.data().username !== snapshot.data().username) {
@@ -59,7 +61,7 @@ exports.createNotificationOnLike = functions
             sender: snapshot.data().username,
             type: "like",
             read: false,
-            eventId: doc.id,
+            screamId: doc.id,
           });
         }
       })
@@ -85,7 +87,7 @@ exports.createNotificationOnComment = functions
   .firestore.document("comments/{id}")
   .onCreate((snapshot) => {
     return db
-      .doc(`/events/${snapshot.data().eventId}`)
+      .doc(`/screams/${snapshot.data().screamId}`)
       .get()
       .then((doc) => {
         if (doc.exists && doc.data().username !== snapshot.data().username) {
@@ -95,7 +97,7 @@ exports.createNotificationOnComment = functions
             sender: snapshot.data().username,
             type: "comment",
             read: false,
-            eventId: doc.id,
+            screamId: doc.id,
           });
         }
       })
@@ -114,13 +116,13 @@ exports.onUserImageChange = functions
       console.log("image change");
       const batch = db.batch();
       return db
-        .collection("events")
+        .collection("screams")
         .where("username", "==", change.before.data().username)
         .get()
         .then((data) => {
           data.forEach((doc) => {
-            const event = db.doc(`/events/${doc.id}`);
-            batch.update(event, { userImage: change.after.data().imageUrl });
+            const scream = db.doc(`/screams/${doc.id}`);
+            batch.update(scream, { userImage: change.after.data().imageUrl });
           });
           return batch.commit();
         });
@@ -129,21 +131,21 @@ exports.onUserImageChange = functions
     }
   });
 
-exports.onEventDelete = functions
+exports.onScreamDelete = functions
   .region("europe-west3")
-  .firestore.document("/events/{eventId}")
+  .firestore.document("/screams/{screamId}")
   .onDelete((snapshot, context) => {
-    const eventId = context.params.eventId;
+    const screamId = context.params.screamId;
     const batch = db.batch();
     return db
       .collection("comments")
-      .where("eventId", "==", eventId)
+      .where("screamId", "==", screamId)
       .get()
       .then((data) => {
         data.forEach((doc) => {
           batch.delete(db.doc(`/comments/${doc.id}`));
         });
-        return db.collection("likes").where("eventId", "==", eventId).get();
+        return db.collection("likes").where("screamId", "==", screamId).get();
       })
       .then((data) => {
         data.forEach((doc) => {
@@ -151,7 +153,7 @@ exports.onEventDelete = functions
         });
         return db
           .collection("notifications")
-          .where("eventId", "==", eventId)
+          .where("screamId", "==", screamId)
           .get();
       })
       .then((data) => {
